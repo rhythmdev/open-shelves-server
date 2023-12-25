@@ -5,7 +5,18 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 8080;
 
-app.use(cors())
+const corsConfig = {
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'x-client-key', 'x-client-token', 'x-client-secret', 'Authorization'],
+    credentials: true
+
+
+}
+app.use(cors(corsConfig))
+app.options("", cors(corsConfig))
+
+
 app.use(express.json())
 
 
@@ -25,19 +36,38 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        // await client.connect();
+         client.connect();
 
-        const booksCategoryCollection = client.db('openShelves').collection('booksCategory')
-         
+        const booksCategoryCollection = client.db('openShelves').collection('booksCategory');
+        const booksCollection = client.db('openShelves').collection('books');
+
         // get books category
-        app.get('/booksCategory', async (req, res) => {
+        app.get('/api/booksCategory', async (req, res) => {
             const result = await booksCategoryCollection.find().toArray();
             res.send(result)
         })
 
 
-        // for books categories post api
-        app.post('/booksCategory', async (req, res) => {
+
+
+
+        // for add book
+        app.post('/api/addBook', async (req, res) => {
+            const newBook = req.body;
+            const result = await booksCollection.insertOne(newBook);
+            res.send(result);
+        })
+
+
+
+
+
+
+
+
+
+        // for books categories 
+        app.post('/api/booksCategory', async (req, res) => {
             const booksCategory = req.body;
             const result = await booksCategoryCollection.insertOne(booksCategory);
             res.send(result)
