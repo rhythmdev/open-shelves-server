@@ -46,6 +46,14 @@ async function run() {
             const result = await booksCategoryCollection.find().toArray();
             res.send(result)
         })
+        
+        // get books by category
+        app.get('/api/books/:category', async(req, res) => {
+            const category = req.params.category;
+            const result = await booksCollection.find({category : category}).toArray();
+            res.send(result);
+        })
+
 
 
 
