@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 8080;
 
@@ -36,7 +36,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-         client.connect();
+        client.connect();
 
         const booksCategoryCollection = client.db('openShelves').collection('booksCategory');
         const booksCollection = client.db('openShelves').collection('books');
@@ -46,16 +46,27 @@ async function run() {
             const result = await booksCategoryCollection.find().toArray();
             res.send(result)
         })
-        
+
         // get books by category
-        app.get('/api/books/:category', async(req, res) => {
+        app.get('/api/books/:category', async (req, res) => {
             const category = req.params.category;
-            const result = await booksCollection.find({category : category}).toArray();
+            const result = await booksCollection.find({ category: category }).toArray();
             res.send(result);
         })
 
+        //get all books
+        app.get('/api/books', async (req, res) => {
+            const result = await booksCollection.find().toArray();
+            res.send(result);
+        })
 
-
+        // get single book by id
+        app.get('/api/singleBook/:id', async (req, res) => {
+            const singleBook = req.params.id
+            const query = { _id: new ObjectId(singleBook) }
+            const result = await booksCollection.findOne(query);
+            res.send(result)
+        })
 
 
 
