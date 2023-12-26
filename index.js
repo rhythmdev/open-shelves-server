@@ -40,6 +40,7 @@ async function run() {
 
         const booksCategoryCollection = client.db('openShelves').collection('booksCategory');
         const booksCollection = client.db('openShelves').collection('books');
+        const borrowedBooksCollection = client.db('openShelves').collection('borrowedBooks');
 
         // get books category
         app.get('/api/booksCategory', async (req, res) => {
@@ -66,6 +67,20 @@ async function run() {
             const query = { _id: new ObjectId(singleBook) }
             const result = await booksCollection.findOne(query);
             res.send(result)
+        })
+
+        // for borrow book
+        app.post('/api/borrowBook', async (req, res) => {
+            const borrowedBook = req.body;
+            const existingBook = await borrowedBooksCollection.findOne({ email: borrowedBook.email, bookId: borrowedBook.bookId })
+
+            if (existingBook) {
+                res.send('You already borrowed this book')
+            }
+            else {
+                const result = await borrowedBooksCollection.insertOne(borrowedBook);
+                res.send(result)
+            }
         })
 
 
