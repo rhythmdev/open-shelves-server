@@ -82,6 +82,24 @@ async function run() {
                 res.send(result)
             }
         })
+        //update book quantity
+        app.patch('/api/updateBookQuantity/:bookId', async (req, res) => {
+            const bookId = req.params.bookId;
+            const previousQuantity = await booksCollection.findOne({ _id: new ObjectId(bookId) })
+
+            const newQuantity = previousQuantity.book_quantity - 1;
+            const updateDoc = {
+                $set: {
+                    book_quantity: newQuantity
+                },
+            };
+
+            const result = await booksCollection.updateOne({ _id: new ObjectId(bookId) }, updateDoc);
+            const updatedBook = await booksCollection.findOne({ _id: new ObjectId(bookId) })
+
+            res.send({ result, updatedBook })
+
+        })
 
 
 
@@ -91,7 +109,6 @@ async function run() {
             const result = await booksCollection.insertOne(newBook);
             res.send(result);
         })
-
 
 
 
