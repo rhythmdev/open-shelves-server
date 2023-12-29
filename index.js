@@ -68,6 +68,13 @@ async function run() {
             const result = await booksCollection.findOne(query);
             res.send(result)
         })
+        // get borrowed book by email
+        app.get('/api/borrowedBook/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await borrowedBooksCollection.find(query).toArray();
+            res.send(result);
+        })
 
         // for borrow book
         app.post('/api/borrowBook', async (req, res) => {
@@ -101,6 +108,34 @@ async function run() {
 
         })
 
+        // for increase book quantity
+        app.patch('/api/increaseBookQuantity/:bookId', async (req, res) => {
+            const bookId = req.params.bookId;
+            const previousQuantity = await booksCollection.findOne({ _id: new ObjectId(bookId) })
+
+            const newIncreasedQuantity = previousQuantity.book_quantity + 1;
+            const updateDoc = {
+                $set: {
+                    book_quantity: newIncreasedQuantity
+                },
+            };
+
+            const result = await booksCollection.updateOne({ _id: new ObjectId(bookId) }, updateDoc);
+
+            res.send(result)
+
+        })
+
+
+        // for delete book
+        app.delete('/api/returnBook/:id', async (req, res) => {
+            const id = req.params.id;
+            const result = await borrowedBooksCollection.deleteOne({ _id: new ObjectId(id) });
+            res.send(result)
+        })
+
+
+
 
 
         // for add book
@@ -109,13 +144,6 @@ async function run() {
             const result = await booksCollection.insertOne(newBook);
             res.send(result);
         })
-
-
-
-
-
-
-
 
         // for books categories 
         app.post('/api/booksCategory', async (req, res) => {
