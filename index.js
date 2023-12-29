@@ -134,6 +134,25 @@ async function run() {
             res.send(result)
         })
 
+        // update book
+        app.put('/api/updateBook/:id', async (req, res) => {
+            const id = req.params.id;
+            const updateBook = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedBook = {
+                $set: {
+                    book_name: updateBook.book_name,
+                    book_image: updateBook.book_image,
+                    author_name: updateBook.author_name,
+                    rating: updateBook.rating,
+                    category: updateBook.category,
+                }
+            }
+            const result = await booksCollection.updateOne(filter, updatedBook, options);
+            res.send(result);
+        })
+
 
 
 
