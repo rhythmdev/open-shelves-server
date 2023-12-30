@@ -34,6 +34,30 @@ const client = new MongoClient(uri, {
     }
 });
 
+//middlewares
+const logger = (req, res, next) => {
+    // res.on(req.method, req.url);
+    console.log('log info', req.method, req.url);
+    next();
+}
+
+const verifyToken = (req, res, next) => {
+    const token = req?.cookies?.token;
+    // console.log('token in the middleware:', token);
+    if (!token) {
+        return res.status(401).send({ message: 'Unauthorized Access' })
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'Unauthorized Access' })
+        }
+        req.user = decoded;
+        next();
+    })
+
+}
+
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
@@ -45,7 +69,7 @@ async function run() {
 
 
         // auth related api
-        app.post('/api/jwt', async (req, res) => {
+        app.post('/api/jwt', logger, async (req, res) => {
             const user = req.body;
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '4h' });
             res.cookie('token', token, {
@@ -78,34 +102,39 @@ async function run() {
         })
 
         //get all books
-        app.get('/api/books', async (req, res) => {
+        app.get('/api/books', logger, async (req, res) => {
             const result = await booksCollection.find().toArray();
             res.send(result);
         })
 
         // get single book by id
-        app.get('/api/singleBook/:id', async (req, res) => {
+        app.get('/api/singleBook/:id', logger, async (req, res) => {
             const singleBook = req.params.id
             const query = { _id: new ObjectId(singleBook) }
             const result = await booksCollection.findOne(query);
             res.send(result)
         })
         // get borrowed book by email
-        app.get('/api/borrowedBook/:email', async (req, res) => {
+        app.get('/api/borrowedBook/:email', logger, verifyToken, async (req, res) => {
+            console.log('owner info', req.user);
+            if (req.user.email !== req.params.email) {
+                return res.status(403).send({ message: 'Forbidden Access' })
+            }
+
             const email = req.params.email;
             const query = { email: email }
             const result = await borrowedBooksCollection.find(query).toArray();
             res.send(result);
         })
         // get book quantity greater than 0
-        app.get('/api/filteredBooks', async (req, res) => {
+        app.get('/api/filteredBooks', logger, async (req, res) => {
             const result = await booksCollection.find({ book_quantity: { $ne: 0 } }).toArray();
             res.send(result);
 
         })
 
         // for borrow book
-        app.post('/api/borrowBook', async (req, res) => {
+        app.post('/api/borrowBook', logger, async (req, res) => {
             const borrowedBook = req.body;
             const existingBook = await borrowedBooksCollection.findOne({ email: borrowedBook.email, bookId: borrowedBook.bookId })
 
@@ -118,7 +147,7 @@ async function run() {
             }
         })
         //update book quantity
-        app.patch('/api/updateBookQuantity/:bookId', async (req, res) => {
+        app.patch('/api/updateBookQuantity/:bookId', logger, async (req, res) => {
             const bookId = req.params.bookId;
             const previousQuantity = await booksCollection.findOne({ _id: new ObjectId(bookId) })
 
@@ -137,7 +166,7 @@ async function run() {
         })
 
         // for increase book quantity
-        app.patch('/api/increaseBookQuantity/:bookId', async (req, res) => {
+        app.patch('/api/increaseBookQuantity/:bookId', logger, async (req, res) => {
             const bookId = req.params.bookId;
             const previousQuantity = await booksCollection.findOne({ _id: new ObjectId(bookId) })
 
@@ -156,14 +185,14 @@ async function run() {
 
 
         // for delete book
-        app.delete('/api/returnBook/:id', async (req, res) => {
+        app.delete('/api/returnBook/:id', logger, async (req, res) => {
             const id = req.params.id;
             const result = await borrowedBooksCollection.deleteOne({ _id: new ObjectId(id) });
             res.send(result)
         })
 
         // update book
-        app.put('/api/updateBook/:id', async (req, res) => {
+        app.put('/api/updateBook/:id', logger, verifyToken, async (req, res) => {
             const id = req.params.id;
             const updateBook = req.body;
             const filter = { _id: new ObjectId(id) };
@@ -186,7 +215,7 @@ async function run() {
 
 
         // for add book
-        app.post('/api/addBook', async (req, res) => {
+        app.post('/api/addBook', logger, verifyToken, async (req, res) => {
             const newBook = req.body;
             const result = await booksCollection.insertOne(newBook);
             res.send(result);
