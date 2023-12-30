@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 require("dotenv").config();
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 8080;
@@ -15,9 +17,8 @@ const corsConfig = {
 }
 app.use(cors(corsConfig))
 app.options("", cors(corsConfig))
-
-
 app.use(express.json())
+app.use(cookieParser())
 
 
 
@@ -41,6 +42,27 @@ async function run() {
         const booksCategoryCollection = client.db('openShelves').collection('booksCategory');
         const booksCollection = client.db('openShelves').collection('books');
         const borrowedBooksCollection = client.db('openShelves').collection('borrowedBooks');
+
+
+        // auth related api
+        app.post('/api/jwt', async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '4h' });
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none'
+            })
+                .send({ success: true })
+
+        })
+        // clear cookie after log out
+        app.post('/api/logOut', async (req, res) => {
+            const user = req.body;
+            res.clearCookie('token', { maxAge: 0 }).send({ success: true })
+        })
+
+        // books related api
 
         // get books category
         app.get('/api/booksCategory', async (req, res) => {
@@ -77,7 +99,7 @@ async function run() {
         })
         // get book quantity greater than 0
         app.get('/api/filteredBooks', async (req, res) => {
-             const result = await booksCollection.find({ book_quantity: { $ne: 0 } }).toArray();
+            const result = await booksCollection.find({ book_quantity: { $ne: 0 } }).toArray();
             res.send(result);
 
         })
