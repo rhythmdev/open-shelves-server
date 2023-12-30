@@ -75,6 +75,12 @@ async function run() {
             const result = await borrowedBooksCollection.find(query).toArray();
             res.send(result);
         })
+        // get book quantity greater than 0
+        app.get('/api/filteredBooks', async (req, res) => {
+             const result = await booksCollection.find({ book_quantity: { $ne: 0 } }).toArray();
+            res.send(result);
+
+        })
 
         // for borrow book
         app.post('/api/borrowBook', async (req, res) => {
