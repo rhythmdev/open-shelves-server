@@ -8,7 +8,11 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 const corsConfig = {
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173',
+        'https://open-shelves-44471.web.app',
+        'https://open-shelves-44471.firebaseapp.com'
+    ],
+
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Origin', 'X-Requested-With', 'Accept', 'x-client-key', 'x-client-token', 'x-client-secret', 'Authorization'],
     credentials: true
@@ -83,7 +87,7 @@ async function run() {
         // clear cookie after log out
         app.post('/api/logOut', async (req, res) => {
             const user = req.body;
-            res.clearCookie('token', { maxAge: 0 }).send({ success: true })
+            res.clearCookie('token', { maxAge: 0, secure: true, sameSite: 'none' }).send({ success: true })
         })
 
         // books related api
