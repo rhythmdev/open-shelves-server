@@ -8,7 +8,8 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 const corsConfig = {
-    origin: ['http://localhost:5173',
+    origin: [
+        // 'http://localhost:5173',
         'https://open-shelves-44471.web.app',
         'https://open-shelves-44471.firebaseapp.com'
     ],
@@ -120,7 +121,7 @@ async function run() {
         })
         // get borrowed book by email
         app.get('/api/borrowedBook/:email', logger, verifyToken, async (req, res) => {
-            console.log('owner info', req.user);
+
             if (req.user.email !== req.params.email) {
                 return res.status(403).send({ message: 'Forbidden Access' })
             }
